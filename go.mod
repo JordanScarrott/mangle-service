@@ -1,4 +1,4 @@
-module mangle-microservice-example
+module mangle-service
 
 go 1.24.3
 
