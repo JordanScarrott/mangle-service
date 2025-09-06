@@ -9,7 +9,7 @@ This phase covers the initial setup of the Go project and its basic structure.
 *   **[x] Ticket 1: Initialize Go Project & Directory Structure**
     *   **Description:** Create a new Go module for the `mangle-service`. Set up the directory structure to align with the Ports and Adapters architecture: `/cmd/mangle-service`, `/internal/core`, `/internal/adapters`, `/internal/ports`.
 
-*   **Ticket 2: Implement Basic Web Server**
+*   **[x] Ticket 2: Implement Basic Web Server**
     *   **Description:** Set up a simple HTTP server using `net/http` or a lightweight framework like Gin. This will serve as the foundation for the API endpoints. Create a basic health check endpoint (e.g., `/healthz`).
 
 *   **Ticket 3: Integrate Mangle Library**
