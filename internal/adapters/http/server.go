@@ -30,6 +30,7 @@ func (a *Adapter) Start(ctx context.Context) error {
 	a.logger.Info("starting server", "addr", a.server.Addr)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/query", a.handleQuery)
+	mux.HandleFunc("/healthz", a.handleHealthCheck)
 
 	a.server.Handler = mux
 	return a.server.ListenAndServe()
@@ -38,6 +39,14 @@ func (a *Adapter) Start(ctx context.Context) error {
 func (a *Adapter) Stop(ctx context.Context) error {
 	a.logger.Info("stopping server")
 	return a.server.Shutdown(ctx)
+}
+
+func (a *Adapter) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "invalid method", http.StatusMethodNotAllowed)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (a *Adapter) handleQuery(w http.ResponseWriter, r *http.Request) {
