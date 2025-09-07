@@ -51,7 +51,7 @@ This phase is about creating a way to define and load the relationships between 
 *   **[x] Ticket 11: Implement Configuration Loader**
     *   **Description:** In `/internal/core/services`, create a `RelationshipService` responsible for loading the service relationship definitions from a file.
 
-*   **Ticket 12: Generate Mangle Rules from Relationships**
+*   **[x] Ticket 12: Generate Mangle Rules from Relationships**
     *   **Description:** Add logic to the `RelationshipService` to transform the loaded relationship definitions into a set of Mangle rules that can be used for graph-based queries.
 
 ## 5. Querying and Execution
