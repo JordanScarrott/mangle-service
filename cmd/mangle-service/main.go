@@ -40,7 +40,7 @@ func main() {
 		log.Error("failed to load relationships", "error", err)
 		os.Exit(1)
 	}
-	queryService := service.NewQueryService(logService, relationshipService)
+	queryService := service.NewQueryService(logService, relationshipService, log)
 
 	// 5. HTTP Server
 	httpAdapter := httphandler.NewAdapter(queryService, log, port)
