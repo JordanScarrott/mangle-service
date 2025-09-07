@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"mangle-service/internal/adapters/file"
 	httphandler "mangle-service/internal/adapters/http"
+	"mangle-service/internal/adapters"
 	"mangle-service/internal/core/domain"
 	"mangle-service/internal/core/service"
 	"mangle-service/pkg/logger"
@@ -87,7 +88,8 @@ relationships:
 	require.NoError(t, err)
 
 	logService := service.NewLogService(logAdapter)
-	queryService := service.NewQueryService(logService, relationshipService, log)
+	traceAdapter := adapters.NewMockTraceAdapter()
+	queryService := service.NewQueryService(logService, traceAdapter, relationshipService, log)
 
 	httpAdapter := httphandler.NewAdapter(queryService, log, "8080")
 

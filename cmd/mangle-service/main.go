@@ -12,6 +12,8 @@ import (
 	"mangle-service/internal/core/service"
 	"mangle-service/pkg/logger"
 	"net/http"
+
+	mocktrace "mangle-service/internal/adapters"
 	"os"
 	"os/signal"
 	"syscall"
@@ -35,14 +37,25 @@ func main() {
 	// 2. Logger
 	log := logger.New(slog.LevelDebug)
 
+	jaegerURL := os.Getenv("JAEGER_QUERY_URL")
+	if jaegerURL == "" && *env != "test" {
+		log.Error("JAEGER_QUERY_URL must be set in non-test environments")
+		os.Exit(1)
+	}
+
 	// 3. Adapters
-	var logAdapter ports.LogDataPort
+	var (
+		logAdapter   ports.LogDataPort
+		traceAdapter ports.TraceDataPort
+	)
 	if *env == "test" {
-		log.Info("using mock log adapter")
+		log.Info("using mock adapters")
 		logAdapter = mock.NewMockLogAdapter()
+		traceAdapter = mocktrace.NewMockTraceAdapter()
 	} else {
-		log.Info("using elasticsearch log adapter")
+		log.Info("using real adapters")
 		logAdapter = elasticsearch.NewElasticsearchAdapter()
+		traceAdapter = mocktrace.NewJaegerAdapter(&http.Client{Timeout: 30 * time.Second}, jaegerURL)
 	}
 	fileAdapter := file.NewConfigLoader()
 
@@ -53,7 +66,7 @@ func main() {
 		log.Error("failed to load relationships", "error", err)
 		os.Exit(1)
 	}
-	queryService := service.NewQueryService(logService, relationshipService, log)
+	queryService := service.NewQueryService(logService, traceAdapter, relationshipService, log)
 
 	// 5. HTTP Server
 	httpAdapter := httphandler.NewAdapter(queryService, log, port)
