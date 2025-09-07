@@ -58,10 +58,10 @@ This phase is about creating a way to define and load the relationships between 
 
 This phase connects the API to the core logic to enable end-to-end querying.
 
-*   **Ticket 13: Create API Endpoint for Mangle Queries**
+*   **[x] Ticket 13: Create API Endpoint for Mangle Queries**
     *   **Description:** In the web server component (`/cmd/mangle-service`), create a new API endpoint (e.g., `POST /query`) that accepts a text-based Mangle query in the request body.
 
-*   **Ticket 14: Implement Query Execution Logic**
+*   **[x] Ticket 14: Implement Query Execution Logic**
     *   **Description:** In the core `LogService`, implement a method that takes an incoming Mangle query. This method will use the `LogDataPort` to fetch log facts and the `RelationshipService` to get relationship rules.
 
 *   **Ticket 15: Execute Query with Mangle Engine**

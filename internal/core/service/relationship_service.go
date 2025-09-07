@@ -41,8 +41,8 @@ func (s *RelationshipService) GetRelationships() []domain.ServiceRelationship {
 	return s.config.Relationships
 }
 
-// GetMangleRules transforms the loaded service relationships into Mangle rules.
-func (s *RelationshipService) GetMangleRules() ([]domain.Fact, error) {
+// GetMangleFacts transforms the loaded service relationships into Mangle facts.
+func (s *RelationshipService) GetMangleFacts() ([]domain.Fact, error) {
 	if s.config == nil {
 		return nil, fmt.Errorf("relationships not loaded")
 	}
@@ -60,12 +60,18 @@ func (s *RelationshipService) GetMangleRules() ([]domain.Fact, error) {
 	return facts, nil
 }
 
+// GetMangleRulesAsString returns the Mangle rules for service dependencies.
+func (s *RelationshipService) GetMangleRulesAsString() (string, error) {
+	return `
+		depends_on(X, Y) :- calls(X, Y).
+		depends_on(X, Z) :- calls(X, Y), depends_on(Y, Z).
+	`, nil
+}
+
 func (s *RelationshipService) createCallsFact(service, dependency string) (domain.Fact, error) {
-	predicate := ast.PredicateSym{Symbol: "calls", Arity: 2}
-	args := []ast.Term{
+	return ast.NewAtom(
+		"calls",
 		ast.String(service),
 		ast.String(dependency),
-	}
-
-	return ast.NewAtom(predicate, args...), nil
+	), nil
 }
