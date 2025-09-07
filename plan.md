@@ -29,7 +29,7 @@ This phase focuses on defining the core logic's boundaries through ports.
 
 This phase involves implementing the concrete adapter for fetching logs from Elasticsearch.
 
-*   **Ticket 6: Implement Elasticsearch Adapter Stub**
+*   **[x] Ticket 6: Implement Elasticsearch Adapter Stub**
     *   **Description:** In `/internal/adapters/elasticsearch`, create an `ElasticsearchAdapter` struct that implements the `LogDataPort` interface. Initially, this can have stubbed-out methods that return dummy data.
 
 *   **Ticket 7: Implement Elasticsearch Connection Logic**
