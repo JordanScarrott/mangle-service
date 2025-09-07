@@ -35,7 +35,7 @@ This phase involves implementing the concrete adapter for fetching logs from Ela
 *   **[x] Ticket 7: Implement Elasticsearch Connection Logic**
     *   **Description:** Add logic to the `ElasticsearchAdapter` to connect to an Elasticsearch instance. Connection details should be configurable via environment variables.
 
-*   **Ticket 8: Implement Log Fetching Logic**
+*   **[x] Ticket 8: Implement Log Fetching Logic**
     *   **Description:** Implement the `FetchLogs` method in the `ElasticsearchAdapter`. This method will construct and execute a query against an Elasticsearch instance based on the provided criteria.
 
 *   **Ticket 9: Implement Data Transformation to Mangle Facts**

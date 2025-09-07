@@ -1,6 +1,10 @@
 package elasticsearch
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 
@@ -30,14 +34,68 @@ func NewElasticsearchAdapter() *ElasticsearchAdapter {
 }
 
 // FetchLogs fetches logs from Elasticsearch.
-// This is a stub implementation that returns dummy data.
 func (a *ElasticsearchAdapter) FetchLogs(queryCriteria map[string]string) ([]domain.Fact, error) {
-	// Create a dummy fact for demonstration purposes.
-	// A real implementation would query Elasticsearch and transform
-	// the results into facts.
-	dummyFact := ast.NewAtom("log", ast.String("dummy log entry"))
+	var mustClauses []interface{}
+	for key, value := range queryCriteria {
+		mustClauses = append(mustClauses, map[string]interface{}{
+			"match": map[string]interface{}{
+				key: value,
+			},
+		})
+	}
 
-	return []domain.Fact{
-		dummyFact,
-	}, nil
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": mustClauses,
+			},
+		},
+	}
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(query); err != nil {
+		return nil, err
+	}
+
+	res, err := a.client.Search(
+		a.client.Search.WithContext(context.Background()),
+		a.client.Search.WithIndex("logs"), // Assuming logs are in an index named "logs"
+		a.client.Search.WithBody(&buf),
+		a.client.Search.WithTrackTotalHits(true),
+		a.client.Search.WithPretty(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		return nil, fmt.Errorf("Elasticsearch error: %s", res.String())
+	}
+
+	var r map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+		return nil, fmt.Errorf("Error parsing the response body: %s", err)
+	}
+
+	var facts []domain.Fact
+	hits, ok := r["hits"].(map[string]interface{})["hits"].([]interface{})
+	if !ok {
+		return []domain.Fact{}, nil // No hits found
+	}
+
+	for _, hit := range hits {
+		source, ok := hit.(map[string]interface{})["_source"]
+		if !ok {
+			continue
+		}
+		jsonSource, err := json.Marshal(source)
+		if err != nil {
+			continue
+		}
+		fact := ast.NewAtom("log", ast.String(string(jsonSource)))
+		facts = append(facts, fact)
+	}
+
+	return facts, nil
 }
