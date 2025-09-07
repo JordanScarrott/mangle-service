@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log/slog"
+	"mangle-service/internal/adapters/elasticsearch"
 	httphandler "mangle-service/internal/adapters/http"
 	"mangle-service/internal/adapters/mangle"
 	"mangle-service/internal/core/service"
@@ -31,8 +32,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Instantiate the Elasticsearch adapter
+	esAdapter := elasticsearch.NewElasticsearchAdapter()
+
 	// 4. Core Service
 	queryService := service.NewQueryService(mangleAdapter)
+	// Instantiate the Log service
+	_ = service.NewLogService(esAdapter)
 
 	// 5. HTTP Server
 	httpAdapter := httphandler.NewAdapter(queryService, log, port)
@@ -43,7 +49,7 @@ func main() {
 
 	go func() {
 		if err := httpAdapter.Start(ctx); err != nil && err != http.ErrServerClosed {
-			log.Error("failed to start http server", "error", err)
+			log.Error("failed to start http server", "error",err)
 			os.Exit(1)
 		}
 	}()

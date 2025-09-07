@@ -32,7 +32,7 @@ This phase involves implementing the concrete adapter for fetching logs from Ela
 *   **[x] Ticket 6: Implement Elasticsearch Adapter Stub**
     *   **Description:** In `/internal/adapters/elasticsearch`, create an `ElasticsearchAdapter` struct that implements the `LogDataPort` interface. Initially, this can have stubbed-out methods that return dummy data.
 
-*   **Ticket 7: Implement Elasticsearch Connection Logic**
+*   **[x] Ticket 7: Implement Elasticsearch Connection Logic**
     *   **Description:** Add logic to the `ElasticsearchAdapter` to connect to an Elasticsearch instance. Connection details should be configurable via environment variables.
 
 *   **Ticket 8: Implement Log Fetching Logic**
