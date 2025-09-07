@@ -14,25 +14,35 @@ type Adapter struct {
 	service ports.QueryService
 	logger  *slog.Logger
 	server  *http.Server
+	router  *http.ServeMux
 }
 
 func NewAdapter(service ports.QueryService, logger *slog.Logger, port string) *Adapter {
-	return &Adapter{
+	mux := http.NewServeMux()
+	adapter := &Adapter{
 		service: service,
 		logger:  logger,
+		router:  mux,
 		server: &http.Server{
-			Addr: ":" + port,
+			Addr:    ":" + port,
+			Handler: mux,
 		},
 	}
+	adapter.registerRoutes()
+	return adapter
+}
+
+func (a *Adapter) registerRoutes() {
+	a.router.HandleFunc("/query", a.handleQuery)
+	a.router.HandleFunc("/healthz", a.handleHealthCheck)
+}
+
+func (a *Adapter) GetRouter() http.Handler {
+	return a.router
 }
 
 func (a *Adapter) Start(ctx context.Context) error {
 	a.logger.Info("starting server", "addr", a.server.Addr)
-	mux := http.NewServeMux()
-	mux.HandleFunc("/query", a.handleQuery)
-	mux.HandleFunc("/healthz", a.handleHealthCheck)
-
-	a.server.Handler = mux
 	return a.server.ListenAndServe()
 }
 
