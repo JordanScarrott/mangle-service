@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log/slog"
 	"mangle-service/internal/adapters/file"
@@ -15,7 +14,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,15 +27,12 @@ func TestEndToEndQuery(t *testing.T) {
 	fileAdapter := file.NewConfigLoader()
 
 	// Create a temporary relationships file for the test
-	relationshipContent := `{
-		"relationships": [
-			{
-				"service": "service-a",
-				"depends_on": ["service-b"]
-			}
-		]
-	}`
-	tmpfile, err := os.CreateTemp("", "relationships.*.json")
+	relationshipContent := `
+relationships:
+  - service: "service-a"
+    depends_on: ["service-b"]
+`
+	tmpfile, err := os.CreateTemp("", "relationships.*.yaml")
 	require.NoError(t, err)
 	defer os.Remove(tmpfile.Name())
 	_, err = tmpfile.Write([]byte(relationshipContent))
@@ -79,25 +74,11 @@ func TestEndToEndQuery(t *testing.T) {
 	err = json.Unmarshal(body, &result)
 	require.NoError(t, err)
 
-	expectedBindings := []map[string]string{
-		{"var0": "B", "var1": "500", "var2": "database error"},
+	expectedBindings := []domain.LogEntry{
+		{"S": "B"},
 	}
 
 	assert.Equal(t, 1, result.Count)
 	assert.Len(t, result.Results, 1)
-
-	resultBindings := []map[string]string{}
-	for _, r := range result.Results {
-		binding := map[string]string{}
-		for k, v := range r {
-			s, ok := v.(string)
-			if !ok {
-				s = fmt.Sprintf("%v", v)
-			}
-			binding[k] = strings.Trim(s, `"`)
-		}
-		resultBindings = append(resultBindings, binding)
-	}
-
-	assert.Equal(t, expectedBindings, resultBindings)
+	assert.Equal(t, expectedBindings, result.Results)
 }
