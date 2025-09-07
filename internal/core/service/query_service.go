@@ -18,14 +18,16 @@ import (
 
 type queryService struct {
 	logDataPort         ports.LogDataPort
+	traceDataPort       ports.TraceDataPort
 	relationshipService ports.RelationshipService
 	logger              *slog.Logger
 }
 
 // NewQueryService creates a new instance of the query service.
-func NewQueryService(logDataPort ports.LogDataPort, relationshipService ports.RelationshipService, logger *slog.Logger) ports.QueryService {
+func NewQueryService(logDataPort ports.LogDataPort, traceDataPort ports.TraceDataPort, relationshipService ports.RelationshipService, logger *slog.Logger) ports.QueryService {
 	return &queryService{
 		logDataPort:         logDataPort,
+		traceDataPort:       traceDataPort,
 		relationshipService: relationshipService,
 		logger:              logger,
 	}
@@ -76,8 +78,18 @@ func (s *queryService) ExecuteQuery(ctx context.Context, req domain.QueryRequest
 		return nil, fmt.Errorf("failed to parse relationship rules: %w", err)
 	}
 
-	// 4. Combine facts and rules
+	// 4. Fetch trace facts
+	s.logger.Debug("fetching trace facts")
+	// TODO: The serviceName should be dynamic, possibly from the query or config.
+	traceFacts, err := s.traceDataPort.FetchTraces(ctx, "mangle-service")
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch traces: %w", err)
+	}
+	s.logger.Debug("fetched trace facts", "count", len(traceFacts))
+
+	// 5. Combine facts and rules
 	allFacts := append(logFacts, relationshipFacts...)
+	allFacts = append(allFacts, traceFacts...)
 	allRules := append(relationshipRulesUnit.Clauses, requestRules...)
 	s.logger.Debug("combined facts and rules", "total_facts", len(allFacts), "total_rules", len(allRules))
 
