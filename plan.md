@@ -38,7 +38,7 @@ This phase involves implementing the concrete adapter for fetching logs from Ela
 *   **[x] Ticket 8: Implement Log Fetching Logic**
     *   **Description:** Implement the `FetchLogs` method in the `ElasticsearchAdapter`. This method will construct and execute a query against an Elasticsearch instance based on the provided criteria.
 
-*   **Ticket 9: Implement Data Transformation to Mangle Facts**
+*   **[x] Ticket 9: Implement Data Transformation to Mangle Facts**
     *   **Description:** Within the `ElasticsearchAdapter`, add the logic to transform the raw JSON log documents received from Elasticsearch into the `Fact` format required by the Mangle library.
 
 ## 4. Defining Service Relationships

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"mangle-service/internal/core/domain"
 
@@ -33,7 +34,7 @@ func NewElasticsearchAdapter() *ElasticsearchAdapter {
 	return &ElasticsearchAdapter{client: es}
 }
 
-// FetchLogs fetches logs from Elasticsearch.
+// FetchLogs fetches logs from Elasticsearch and transforms them into Mangle facts.
 func (a *ElasticsearchAdapter) FetchLogs(queryCriteria map[string]string) ([]domain.Fact, error) {
 	var mustClauses []interface{}
 	for key, value := range queryCriteria {
@@ -54,28 +55,27 @@ func (a *ElasticsearchAdapter) FetchLogs(queryCriteria map[string]string) ([]dom
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(query); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error encoding query: %w", err)
 	}
 
 	res, err := a.client.Search(
 		a.client.Search.WithContext(context.Background()),
-		a.client.Search.WithIndex("logs"), // Assuming logs are in an index named "logs"
+		a.client.Search.WithIndex("logs"),
 		a.client.Search.WithBody(&buf),
 		a.client.Search.WithTrackTotalHits(true),
-		a.client.Search.WithPretty(),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error executing search: %w", err)
 	}
 	defer res.Body.Close()
 
 	if res.IsError() {
-		return nil, fmt.Errorf("Elasticsearch error: %s", res.String())
+		return nil, fmt.Errorf("elasticsearch error: %s", res.String())
 	}
 
 	var r map[string]interface{}
 	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
-		return nil, fmt.Errorf("Error parsing the response body: %s", err)
+		return nil, fmt.Errorf("error parsing the response body: %w", err)
 	}
 
 	var facts []domain.Fact
@@ -85,17 +85,62 @@ func (a *ElasticsearchAdapter) FetchLogs(queryCriteria map[string]string) ([]dom
 	}
 
 	for _, hit := range hits {
-		source, ok := hit.(map[string]interface{})["_source"]
+		hitMap, ok := hit.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		jsonSource, err := json.Marshal(source)
-		if err != nil {
+
+		docID, ok := hitMap["_id"].(string)
+		if !ok {
 			continue
 		}
-		fact := ast.NewAtom("log", ast.String(string(jsonSource)))
-		facts = append(facts, fact)
+
+		source, ok := hitMap["_source"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		flattenedSource := flattenSource(source, "")
+		for key, value := range flattenedSource {
+			fact := ast.NewAtom(
+				"log.field",
+				ast.String(docID),
+				ast.String(key),
+				ast.String(value),
+			)
+			facts = append(facts, fact)
+		}
 	}
 
 	return facts, nil
+}
+
+// flattenSource recursively flattens a nested map into a single-level map with dot-separated keys.
+func flattenSource(source map[string]interface{}, prefix string) map[string]string {
+	flattened := make(map[string]string)
+	for key, value := range source {
+		newKey := key
+		if prefix != "" {
+			newKey = prefix + "." + key
+		}
+
+		switch v := value.(type) {
+		case map[string]interface{}:
+			// If the value is a map, recurse.
+			for k, val := range flattenSource(v, newKey) {
+				flattened[k] = val
+			}
+		case []interface{}:
+			// If the value is a slice, marshal it to a JSON string.
+			// This is a simple way to handle arrays of objects or values.
+			jsonValue, err := json.Marshal(v)
+			if err == nil {
+				flattened[newKey] = string(jsonValue)
+			}
+		default:
+			// For simple values, convert to string.
+			flattened[newKey] = fmt.Sprintf("%v", v)
+		}
+	}
+	return flattened
 }
