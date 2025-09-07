@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log/slog"
 	"mangle-service/internal/adapters/elasticsearch"
 	"mangle-service/internal/adapters/file"
 	httphandler "mangle-service/internal/adapters/http"
+	"mangle-service/internal/adapters/mock"
+	"mangle-service/internal/core/ports"
 	"mangle-service/internal/core/service"
 	"mangle-service/pkg/logger"
 	"net/http"
@@ -17,6 +20,9 @@ import (
 
 func main() {
 	// 1. Configuration
+	env := flag.String("env", "prod", "environment (dev, prod, test)")
+	flag.Parse()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -30,11 +36,18 @@ func main() {
 	log := logger.New(slog.LevelDebug)
 
 	// 3. Adapters
-	elasticsearchAdapter := elasticsearch.NewElasticsearchAdapter()
+	var logAdapter ports.LogDataPort
+	if *env == "test" {
+		log.Info("using mock log adapter")
+		logAdapter = mock.NewMockLogAdapter()
+	} else {
+		log.Info("using elasticsearch log adapter")
+		logAdapter = elasticsearch.NewElasticsearchAdapter()
+	}
 	fileAdapter := file.NewConfigLoader()
 
 	// 4. Core Services
-	logService := service.NewLogService(elasticsearchAdapter)
+	logService := service.NewLogService(logAdapter)
 	relationshipService := service.NewRelationshipService(fileAdapter)
 	if err := relationshipService.LoadRelationships(relationshipConfigPath); err != nil {
 		log.Error("failed to load relationships", "error", err)
