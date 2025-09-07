@@ -12,7 +12,7 @@ This phase covers the initial setup of the Go project and its basic structure.
 *   **[x] Ticket 2: Implement Basic Web Server**
     *   **Description:** Set up a simple HTTP server using `net/http` or a lightweight framework like Gin. This will serve as the foundation for the API endpoints. Create a basic health check endpoint (e.g., `/healthz`).
 
-*   **Ticket 3: Integrate Mangle Library**
+*   **[x] Ticket 3: Integrate Mangle Library**
     *   **Description:** Add the Mangle library (`github.com/google/mangle`) as a dependency to the project. Create a small proof-of-concept within a temporary main function to ensure it integrates correctly.
 
 ## 2. Application Core & Port Definition
