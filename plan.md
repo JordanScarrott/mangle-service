@@ -64,10 +64,10 @@ This phase connects the API to the core logic to enable end-to-end querying.
 *   **[x] Ticket 14: Implement Query Execution Logic**
     *   **Description:** In the core `LogService`, implement a method that takes an incoming Mangle query. This method will use the `LogDataPort` to fetch log facts and the `RelationshipService` to get relationship rules.
 
-*   **Ticket 15: Execute Query with Mangle Engine**
+*   **[x] Ticket 15: Execute Query with Mangle Engine**
     *   **Description:** Use the Mangle engine to execute the query against the combined set of log facts and relationship rules.
 
-*   **Ticket 16: Format and Return Query Results**
+*   **[x] Ticket 16: Format and Return Query Results**
     *   **Description:** Format the results from the Mangle engine into a user-friendly JSON structure and return them from the `/query` API endpoint.
 
 ## 6. Containerization & Deployment
