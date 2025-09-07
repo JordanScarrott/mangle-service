@@ -22,7 +22,7 @@ This phase focuses on defining the core logic's boundaries through ports.
 *   **[x] Ticket 4: Define Log Data Port**
     *   **Description:** In `/internal/ports`, define a `LogDataPort` interface. This interface will abstract the data source and specify methods required by the core application, such as `FetchLogs(queryCriteria map[string]string) ([]Fact, error)`. The `Fact` type will be defined in the core domain.
 
-*   **Ticket 5: Define Core Log Service**
+*   **[x] Ticket 5: Define Core Log Service**
     *   **Description:** In `/internal/core/services`, create a `LogService` that uses the `LogDataPort`. This service will orchestrate the fetching of logs and will be responsible for the primary business logic, independent of external systems.
 
 ## 3. Infrastructure: Elasticsearch Adapter
