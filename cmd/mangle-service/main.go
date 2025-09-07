@@ -2,25 +2,17 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"mangle-service/internal/adapters/elasticsearch"
+	"mangle-service/internal/adapters/file"
 	httphandler "mangle-service/internal/adapters/http"
-	"mangle-service/internal/adapters/mangle"
 	"mangle-service/internal/core/service"
 	"mangle-service/pkg/logger"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
-
-	"github.com/google/mangle/analysis"
-	"github.com/google/mangle/ast"
-	"github.com/google/mangle/engine"
-	"github.com/google/mangle/factstore"
-	"github.com/google/mangle/parse"
 )
 
 func main() {
@@ -29,27 +21,26 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+	relationshipConfigPath := os.Getenv("RELATIONSHIP_CONFIG_PATH")
+	if relationshipConfigPath == "" {
+		relationshipConfigPath = "relationships.json"
+	}
 
 	// 2. Logger
 	log := logger.New(slog.LevelDebug)
 
-	// Mangle POC
-	runManglePOC(log)
-
 	// 3. Adapters
-	mangleAdapter, err := mangle.NewGoogleMangleAdapter()
-	if err != nil {
-		log.Error("failed to create mangle adapter", "error", err)
+	elasticsearchAdapter := elasticsearch.NewElasticsearchAdapter()
+	fileAdapter := file.NewConfigLoader()
+
+	// 4. Core Services
+	logService := service.NewLogService(elasticsearchAdapter)
+	relationshipService := service.NewRelationshipService(fileAdapter)
+	if err := relationshipService.LoadRelationships(relationshipConfigPath); err != nil {
+		log.Error("failed to load relationships", "error", err)
 		os.Exit(1)
 	}
-
-	// Instantiate the Elasticsearch adapter
-	esAdapter := elasticsearch.NewElasticsearchAdapter()
-
-	// 4. Core Service
-	queryService := service.NewQueryService(mangleAdapter)
-	// Instantiate the Log service
-	_ = service.NewLogService(esAdapter)
+	queryService := service.NewQueryService(logService, relationshipService)
 
 	// 5. HTTP Server
 	httpAdapter := httphandler.NewAdapter(queryService, log, port)
@@ -60,7 +51,7 @@ func main() {
 
 	go func() {
 		if err := httpAdapter.Start(ctx); err != nil && err != http.ErrServerClosed {
-			log.Error("failed to start http server", "error",err)
+			log.Error("failed to start http server", "error", err)
 			os.Exit(1)
 		}
 	}()
@@ -81,65 +72,4 @@ func main() {
 	}
 
 	log.Info("server shutdown complete")
-}
-
-func runManglePOC(log *slog.Logger) {
-	log.Info("--- Running Mangle Proof-of-Concept ---")
-
-	// Hardcoded facts for demonstration purposes.
-	fact1, err := parse.Clause(`calls("service-a", "service-b").`)
-	if err != nil {
-		log.Error("failed to parse fact1", "error", err)
-		return
-	}
-	fact2, err := parse.Clause(`calls("service-b", "service-c").`)
-	if err != nil {
-		log.Error("failed to parse fact2", "error", err)
-		return
-	}
-
-	const dependsOnRules = `
-		depends_on(X, Y) :- calls(X, Y).
-		depends_on(X, Z) :- calls(X, Y), depends_on(Y, Z).
-	`
-	rulesUnit, err := parse.Unit(strings.NewReader(dependsOnRules))
-	if err != nil {
-		log.Error("failed to parse rules", "error", err)
-		return
-	}
-
-	sourceUnit := parse.SourceUnit{
-		Clauses: append([]ast.Clause{fact1, fact2}, rulesUnit.Clauses...),
-	}
-
-	program, err := analysis.AnalyzeOneUnit(sourceUnit, nil)
-	if err != nil {
-		log.Error("failed to create program", "error", err)
-		return
-	}
-
-	store := factstore.NewSimpleInMemoryStore()
-	if err := engine.EvalProgram(program, store); err != nil {
-		log.Error("program evaluation failed", "error", err)
-		return
-	}
-
-	query, err := parse.Atom(`depends_on("service-a", X)`)
-	if err != nil {
-		log.Error("failed to parse query", "error", err)
-		return
-	}
-
-	log.Info("--- Querying for: depends_on(\"service-a\", X) ---")
-	var results []ast.Atom
-	store.GetFacts(query, func(a ast.Atom) error {
-		results = append(results, a)
-		return nil
-	})
-
-	log.Info(fmt.Sprintf("Found %d results:", len(results)))
-	for _, fact := range results {
-		log.Info(fact.String())
-	}
-	log.Info("--- Mangle Proof-of-Concept Finished ---")
 }

@@ -14,5 +14,6 @@ type QueryService interface {
 type RelationshipService interface {
 	LoadRelationships(path string) error
 	GetRelationships() []domain.ServiceRelationship
-	GetMangleRules() ([]domain.Fact, error)
+	GetMangleRulesAsString() (string, error)
+	GetMangleFacts() ([]domain.Fact, error)
 }
