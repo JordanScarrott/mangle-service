@@ -45,13 +45,13 @@ This phase involves implementing the concrete adapter for fetching logs from Ela
 
 This phase is about creating a way to define and load the relationships between microservices.
 
-*   **Ticket 10: Design Service Relationship Configuration Format**
+*   **[x] Ticket 10: Design Service Relationship Configuration Format**
     *   **Description:** Define a YAML or JSON schema for specifying microservice relationships. This configuration will define how services communicate, e.g., `service-a -> service-b`.
 
-*   **Ticket 11: Implement Configuration Loader**
+*   **[x] Ticket 11: Implement Configuration Loader**
     *   **Description:** In `/internal/core/services`, create a `RelationshipService` responsible for loading the service relationship definitions from a file.
 
-*   **Ticket 12: Generate Mangle Rules from Relationships**
+*   **[x] Ticket 12: Generate Mangle Rules from Relationships**
     *   **Description:** Add logic to the `RelationshipService` to transform the loaded relationship definitions into a set of Mangle rules that can be used for graph-based queries.
 
 ## 5. Querying and Execution
