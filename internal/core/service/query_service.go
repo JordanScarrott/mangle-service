@@ -80,7 +80,9 @@ func (s *queryService) ExecuteQuery(ctx context.Context, req domain.QueryRequest
 
 	// 4. Fetch trace facts
 	s.logger.Debug("fetching trace facts")
-	// TODO: The serviceName should be dynamic, possibly from the query or config.
+	// TODO(Jules): The serviceName is currently hardcoded. In a real-world scenario,
+	// this should be made dynamic, for example, by extracting it from the
+	// query itself or from a configuration file.
 	traceFacts, err := s.traceDataPort.FetchTraces(ctx, "mangle-service")
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch traces: %w", err)
